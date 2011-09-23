@@ -28,10 +28,10 @@ $.mobile.page.prototype.options.keepNative = ":jqmData(role='none'), :jqmData(ro
 
 //auto self-init widgets
 $( document ).bind( "pagecreate enhance", function( e ){
-	
+
 	var page = $( e.target ).data( "page" ),
 		o = page.options;
-	
+
 	// degrade inputs to avoid poorly implemented native functionality
 	$( e.target ).find( "input" ).not( o.keepNative ).each(function() {
 		var $this = $( this ),
@@ -39,13 +39,19 @@ $( document ).bind( "pagecreate enhance", function( e ){
 			optType = o.degradeInputs[ type ] || "text";
 
 		if ( o.degradeInputs[ type ] ) {
-			$this.replaceWith(
-				$( "<div>" ).html( $this.clone() ).html()
-					.replace( /\s+type=["']?\w+['"]?/, " type=\"" + optType + "\" data-" + $.mobile.ns + "type=\"" + type + "\" " )
-			);
+		    if (this.type !== type) {
+		        this.type = optType;
+		        $this.data($.mobile.ns + "type", type);
+		    }
+		    else {
+    			$this.replaceWith(
+    		        $( "<div>" ).html( $this.clone() ).html()
+                        .replace( /\s+type=["']?\w+['"]?/, " type=\"" + optType + "\" data-" + $.mobile.ns + "type=\"" + type + "\" " )
+    			);
+		    }
 		}
 	});
-	
+
 });
 
 })( jQuery );
