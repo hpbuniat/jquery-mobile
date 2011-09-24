@@ -10,7 +10,7 @@
 
 	test( "vertical controlgroup classes", function() {
 		var buttons = this.vcontrolgroup.find( ".ui-btn" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( !buttons.hasClass( "ui-btn-corner-all" ), "no button should have class 'ui-btn-corner-all'");
@@ -36,7 +36,7 @@
 		this.vcontrolgroup.controlgroup();
 
 		var buttons = this.vcontrolgroup.find( ".ui-btn" ).filter( ":visible" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( buttons.first().hasClass( "ui-corner-top" ), "first visible button should have class 'ui-corner-top'" );
@@ -53,7 +53,7 @@
 		this.vcontrolgroup.controlgroup();
 
 		var buttons = this.vcontrolgroup.find( ".ui-btn" ).filter( ":visible" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( buttons.first().hasClass( "ui-corner-top" ), "first visible button should have class 'ui-corner-top'" );
@@ -70,7 +70,7 @@
 
 	test( "horizontal controlgroup classes", function() {
 		var buttons = this.hcontrolgroup.find( ".ui-btn" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( !buttons.hasClass( "ui-btn-corner-all" ), "no button should have class 'ui-btn-corner-all'");
@@ -94,7 +94,7 @@
 		this.hcontrolgroup.controlgroup();
 
 		var buttons = this.hcontrolgroup.find( ".ui-btn" ).filter( ":visible" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( buttons.first().hasClass( "ui-corner-left" ), "first visible button should have class 'ui-corner-left'" );
@@ -109,7 +109,7 @@
 		this.hcontrolgroup.controlgroup();
 
 		var buttons = this.hcontrolgroup.find( ".ui-btn" ).filter( ":visible" ),
-			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1)}),
+			middlebuttons = buttons.filter(function(index) { return index > 0 && index < (length-1);}),
 			length = buttons.length;
 
 		ok( buttons.first().hasClass( "ui-corner-left" ), "first visible button should have class 'ui-corner-left'" );

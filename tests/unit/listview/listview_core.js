@@ -441,7 +441,7 @@
 				$li = $page.find( "li:visible" );
 			ok($li.first().hasClass( "ui-corner-top" ), $li.length+" li elements: First visible element should have class ui-corner-top");
 			ok($li.last().hasClass( "ui-corner-bottom" ), $li.length+" li elements: Last visible element should have class ui-corner-bottom");
-		}
+		};
 
 		$.testHelper.pageSequence([
 			function() {

@@ -6,7 +6,7 @@
 	var onChangeCnt = 0;
 	window.onChangeCounter = function() {
 		onChangeCnt++;
-	}
+	};
 	module('jquery.mobile.slider.js');
 
 	var keypressTest = function(opts){
@@ -99,7 +99,7 @@
 		slider.keyup();
 		same(slider.val(), "200");
 	});
-	
+
 	test( "input type should degrade to number when slider is created", function(){
 		same($("#range-slider-up").attr( "type" ), "number");
 	});
@@ -160,7 +160,7 @@
 		ok( !$("#enhancetest").appendTo(".ui-page-active").find(".ui-slider").length, "did not have enhancements applied" );
 		ok( $("#enhancetest").trigger("create").find(".ui-slider").length, "enhancements applied" );
 	});
-	
+
 	test( "toggle switch should fire one change event when clicked", function(){
 		var control = $( "#slider-switch" ),
 			widget = control.data( "slider" ),

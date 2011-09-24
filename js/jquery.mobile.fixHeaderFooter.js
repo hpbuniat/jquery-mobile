@@ -374,7 +374,7 @@ $( document ).bind( "pagecreate create", function( event ) {
 			// Should be slideup
 			$this.find( slideUpSelector ).addClass( slideUpClass );
 
-		})
+		});
 
 	}
 });
