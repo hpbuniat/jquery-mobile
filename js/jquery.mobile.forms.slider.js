@@ -11,8 +11,24 @@ $.widget( "mobile.slider", $.mobile.widget, {
 	options: {
 		theme: null,
 		trackTheme: null,
+		rangeTheme: null,
 		disabled: false,
-		initSelector: "input[type='range'], :jqmData(type='range'), :jqmData(role='slider')"
+		initSelector: "input[type='range'], :jqmData(type='range'), :jqmData(role='slider')",
+		handleData: ['handle-min', 'handle-max']
+	},
+
+	values: function() {
+	    var isInput = ( this.element[ 0 ].nodeName.toLowerCase() === "input" ),
+	        e = this.element,
+	        val = [];
+
+	    jQuery.each(this.options.handleData, function(i, handle) {
+    	    if ( e.data(handle)) {
+    	        val.push( parseFloat( e.data(handle) ) );
+    	    }
+	    });
+
+        return val.length ? val : [isInput ? parseFloat( e.val() ) : e[0].selectedIndex ];
 	},
 
 	_create: function() {
@@ -20,19 +36,25 @@ $.widget( "mobile.slider", $.mobile.widget, {
 		// TODO: Each of these should have comments explain what they're for
 		var self = this,
 
-			control = this.element,
+		    control = this.element,
+
+			o = this.options,
 
 			parentTheme = control.parents( "[class*='ui-bar-'],[class*='ui-body-']" ).eq( 0 ),
 
 			parentTheme = parentTheme.length ? parentTheme.attr( "class" ).match( /ui-(bar|body)-([a-z])/ )[ 2 ] : $.mobile.getTheme("c"),
 
-			theme = this.options.theme ? this.options.theme : parentTheme,
+			theme = o.theme ? o.theme : parentTheme,
 
-			trackTheme = this.options.trackTheme ? this.options.trackTheme : parentTheme,
+			// theme of the outer track-bar
+			trackTheme = o.trackTheme ? o.trackTheme : parentTheme,
 
-			cType = control[ 0 ].nodeName.toLowerCase(),
+			// theme for the part between start & current slider position
+			rangeTheme = o.rangeTheme ? o.rangeTheme : trackTheme,
 
-			selectClass = ( cType == "select" ) ? "ui-slider-switch" : "",
+			cTypeIsSelect = control[ 0 ].nodeName.toLowerCase() === "select",
+
+			selectClass = ( cTypeIsSelect ) ? "ui-slider-switch" : "",
 
 			controlID = control.attr( "id" ),
 
@@ -40,42 +62,46 @@ $.widget( "mobile.slider", $.mobile.widget, {
 
 			label = $( "[for='"+ controlID +"']" ).attr( "id", labelID ),
 
-			val = function() {
-				return  cType == "input"  ? parseFloat( control.val() ) : control[0].selectedIndex;
-			},
+			min =  !cTypeIsSelect ? parseFloat( control.attr( "min" ) ) : 0,
 
-			min =  cType == "input" ? parseFloat( control.attr( "min" ) ) : 0,
-
-			max =  cType == "input" ? parseFloat( control.attr( "max" ) ) : control.find( "option" ).length-1,
+			max =  !cTypeIsSelect ? parseFloat( control.attr( "max" ) ) : control.find( "option" ).length-1,
 
 			step = window.parseFloat( control.attr( "step" ) || 1 ),
 
+			// the slider-wrapper
 			slider = $( "<div class='ui-slider " + selectClass + " ui-btn-down-" + trackTheme +
 									" ui-btn-corner-all' role='application'></div>" ),
 
-			handle = $( "<a href='#' class='ui-slider-handle'></a>" )
-				.appendTo( slider )
-				.buttonMarkup({ corners: true, theme: theme, shadow: true })
-				.attr({
-					"role": "slider",
-					"aria-valuemin": min,
-					"aria-valuemax": max,
-					"aria-valuenow": val(),
-					"aria-valuetext": val(),
-					"title": val(),
-					"aria-labelledby": labelID
-				}),
+			// handle-container
+			handles = [],
+
+			// the current handle-values
+			values = self.values(),
+
+			// the track-background-container
+			rangeBar,
+
 			options;
 
-		$.extend( this, {
-			slider: slider,
-			handle: handle,
-			dragging: false,
-			beforeStart: null,
-			userModified: false
+		control.addClass(values.length > 1 ? 'ui-slider-range' : 'ui-slider-single');
+		jQuery.each(values, function(i) {
+		    handles.push($( "<a href='#' class='ui-slider-handle'></a>" )
+                .appendTo( slider )
+                .buttonMarkup({ corners: true, theme: theme, shadow: true })
+                .attr({
+                    "role": "slider",
+                    "aria-valuemin": min,
+                    "aria-valuemax": max,
+                    "aria-valuenow": values[i],
+                    "aria-valuetext": values[i],
+                    "title": values[i],
+                    "aria-labelledby": labelID
+                })
+                .data('handle', values.length > 1 ? o.handleData[i] : 'single')
+            );
 		});
 
-		if ( cType == "select" ) {
+		if ( cTypeIsSelect ) {
 
 			slider.wrapInner( "<div class='ui-slider-inneroffset'></div>" );
 
@@ -91,23 +117,36 @@ $.widget( "mobile.slider", $.mobile.widget, {
 					.prependTo( slider );
 
 				$( "<span class='ui-slider-label ui-slider-label-" + side + theme + " ui-btn-corner-" + corners + "' role='img'>" + $( this ).text() + "</span>" )
-					.prependTo( handle );
+					.prependTo( handles[0] );
 			});
 
 		}
+		else if (trackTheme != rangeTheme) {
+		    slider.wrapInner( "<div class='ui-slider-range-background ui-btn-down-" + rangeTheme + " ui-btn-corner-all' role='application'></div>" );
+		    rangeBar = slider.find('div.ui-slider-range-background');
+		}
+
+        $.extend( this, {
+            slider: slider,
+            handles: handles,
+            rangeBar: rangeBar,
+            dragging: false,
+            beforeStart: null,
+            userModified: false
+        });
 
 		label.addClass( "ui-slider" );
 
 		// monitor the input for updated values
-		control.addClass( cType === "input" ? "ui-slider-input" : "ui-slider-switch" )
+		control.addClass( !cTypeIsSelect ? "ui-slider-input" : "ui-slider-switch" )
 			.change( function() {
-				self.refresh( val(), true );
+				self.refresh( self.values(), true );
 			})
 			.keyup( function() { // necessary?
-				self.refresh( val(), true, true );
+				self.refresh( self.values(), true, true );
 			})
 			.blur( function() {
-				self.refresh( val(), true );
+				self.refresh( self.values(), true );
 			});
 
 		// prevent screen drag when slider activated
@@ -123,7 +162,7 @@ $.widget( "mobile.slider", $.mobile.widget, {
 			self.dragging = true;
 			self.userModified = false;
 
-			if ( cType === "select" ) {
+			if ( cTypeIsSelect ) {
 				self.beforeStart = control[0].selectedIndex;
 			}
 			self.refresh( event );
@@ -136,7 +175,7 @@ $.widget( "mobile.slider", $.mobile.widget, {
 
 					self.dragging = false;
 
-					if ( cType === "select" ) {
+					if ( cTypeIsSelect ) {
 
 						if ( !self.userModified ) {
 							//tap occurred, but value didn't change. flip it!
@@ -151,78 +190,86 @@ $.widget( "mobile.slider", $.mobile.widget, {
 		slider.insertAfter( control );
 
 		// NOTE force focus on handle
-		this.handle
-			.bind( "vmousedown", function() {
+		jQuery.each(this.handles, function(i, handle) {
+		    handle.bind( "vmousedown", function() {
 				$( this ).focus();
-			})
-			.bind( "vclick", false );
+			    })
+    			.bind( "vclick", false )
+    			.bind( "keydown", function( event ) {
+    				var index = self.values();
+    				index = index[i];
 
-		this.handle
-			.bind( "keydown", function( event ) {
-				var index = val();
+    				if ( self.options.disabled ) {
+    					return;
+    				}
 
-				if ( self.options.disabled ) {
-					return;
-				}
+    				// In all cases prevent the default and mark the handle as active
+    				switch ( event.keyCode ) {
+    				 case $.mobile.keyCode.HOME:
+    				 case $.mobile.keyCode.END:
+    				 case $.mobile.keyCode.PAGE_UP:
+    				 case $.mobile.keyCode.PAGE_DOWN:
+    				 case $.mobile.keyCode.UP:
+    				 case $.mobile.keyCode.RIGHT:
+    				 case $.mobile.keyCode.DOWN:
+    				 case $.mobile.keyCode.LEFT:
+    					event.preventDefault();
 
-				// In all cases prevent the default and mark the handle as active
-				switch ( event.keyCode ) {
-				 case $.mobile.keyCode.HOME:
-				 case $.mobile.keyCode.END:
-				 case $.mobile.keyCode.PAGE_UP:
-				 case $.mobile.keyCode.PAGE_DOWN:
-				 case $.mobile.keyCode.UP:
-				 case $.mobile.keyCode.RIGHT:
-				 case $.mobile.keyCode.DOWN:
-				 case $.mobile.keyCode.LEFT:
-					event.preventDefault();
+    					if ( !self._keySliding ) {
+    						self._keySliding = true;
+    						$( this ).addClass( "ui-state-active" );
+    					}
+    					break;
+    				}
 
-					if ( !self._keySliding ) {
-						self._keySliding = true;
-						$( this ).addClass( "ui-state-active" );
-					}
-					break;
-				}
+    				// move the slider according to the keypress
+    				switch ( event.keyCode ) {
+    				 case $.mobile.keyCode.HOME:
+    					self.refresh( min );
+    					break;
+    				 case $.mobile.keyCode.END:
+    					self.refresh( max );
+    					break;
+    				 case $.mobile.keyCode.PAGE_UP:
+    				 case $.mobile.keyCode.UP:
+    				 case $.mobile.keyCode.RIGHT:
+    					self.refresh( index + step );
+    					break;
+    				 case $.mobile.keyCode.PAGE_DOWN:
+    				 case $.mobile.keyCode.DOWN:
+    				 case $.mobile.keyCode.LEFT:
+    					self.refresh( index - step );
+    					break;
+    				}
+    			}) // remove active mark
+    			.keyup( function( event ) {
+    				if ( self._keySliding ) {
+    					self._keySliding = false;
+    					$( this ).removeClass( "ui-state-active" );
+    				}
+    			});
+		});
 
-				// move the slider according to the keypress
-				switch ( event.keyCode ) {
-				 case $.mobile.keyCode.HOME:
-					self.refresh( min );
-					break;
-				 case $.mobile.keyCode.END:
-					self.refresh( max );
-					break;
-				 case $.mobile.keyCode.PAGE_UP:
-				 case $.mobile.keyCode.UP:
-				 case $.mobile.keyCode.RIGHT:
-					self.refresh( index + step );
-					break;
-				 case $.mobile.keyCode.PAGE_DOWN:
-				 case $.mobile.keyCode.DOWN:
-				 case $.mobile.keyCode.LEFT:
-					self.refresh( index - step );
-					break;
-				}
-			}) // remove active mark
-			.keyup( function( event ) {
-				if ( self._keySliding ) {
-					self._keySliding = false;
-					$( this ).removeClass( "ui-state-active" );
-				}
-			});
-
-		this.refresh(undefined, undefined, true);
+		self.refresh(values, undefined, true);
 	},
 
 	refresh: function( val, isfromControl, preventInputUpdate ) {
 		if ( this.options.disabled ) { return; }
 
-		var control = this.element, percent,
-			cType = control[0].nodeName.toLowerCase(),
-			min = cType === "input" ? parseFloat( control.attr( "min" ) ) : 0,
-			max = cType === "input" ? parseFloat( control.attr( "max" ) ) : control.find( "option" ).length - 1;
+		var self = this,
+		    control = this.element,
+		    percent,
+			cTypeIsSelect = control[ 0 ].nodeName.toLowerCase() === "select",
+			min = !cTypeIsSelect ? parseFloat( control.attr( "min" ) ) : 0,
+			max = !cTypeIsSelect ? parseFloat( control.attr( "max" ) ) : control.find( "option" ).length - 1,
 
-		if ( typeof val === "object" ) {
+	        // the handle on which the new-value will be applied
+	        actHandle,
+
+	        // the left-value of the range-theme
+	        rangeLeft = 0;
+
+		if ( val instanceof jQuery.Event ) {
 			var data = val,
 				// a slight tolerance helped get to the ends of the slider
 				tol = 8;
@@ -231,11 +278,14 @@ $.widget( "mobile.slider", $.mobile.widget, {
 					data.pageX > this.slider.offset().left + this.slider.width() + tol ) {
 				return;
 			}
+
 			percent = Math.round( ( ( data.pageX - this.slider.offset().left ) / this.slider.width() ) * 100 );
-		} else {
-			if ( val == null ) {
-				val = cType === "input" ? parseFloat( control.val() ) : control[0].selectedIndex;
-			}
+		} else if (typeof val === 'object' && val.length) {
+		    jQuery.each(val, function(i, value) {
+		        self.refresh(value, isfromControl, preventInputUpdate);
+		    });
+		    return;
+		} else if (val !== null) {
 			percent = ( parseFloat( val ) - min ) / ( max - min ) * 100;
 		}
 
@@ -246,34 +296,42 @@ $.widget( "mobile.slider", $.mobile.widget, {
 		if ( percent < 0 ) {
 			percent = 0;
 		}
-
-		if ( percent > 100 ) {
+		else if ( percent > 100 ) {
 			percent = 100;
 		}
 
 		var newval = Math.round( ( percent / 100 ) * ( max - min ) ) + min;
-
 		if ( newval < min ) {
 			newval = min;
 		}
-
-		if ( newval > max ) {
+		else if( newval > max ) {
 			newval = max;
 		}
 
-		// Flip the stack of the bg colors
-		if ( percent > 60 && cType === "select" ) {
-			// TODO: Dead path?
+		jQuery.each(this.handles, function(i, handle) {
+		    if (typeof actHandle !== 'object' || Math.abs(actHandle.attr('title') - newval) > Math.abs(handle.attr('title') - newval)) {
+		        actHandle = handle;
+		    }
+		});
+
+		if (typeof actHandle === 'object') {
+		    actHandle.css( "left", percent + "%" ).attr( {
+                "aria-valuenow": (cTypeIsSelect) ? control.find( "option" ).eq( newval ).attr( "value" ) : newval,
+                "aria-valuetext": (cTypeIsSelect) ? control.find( "option" ).eq( newval ).text() : newval,
+                title: newval
+            });
 		}
-		this.handle.css( "left", percent + "%" );
-		this.handle.attr( {
-				"aria-valuenow": cType === "input" ? newval : control.find( "option" ).eq( newval ).attr( "value" ),
-				"aria-valuetext": cType === "input" ? newval : control.find( "option" ).eq( newval ).text(),
-				title: newval
-			});
+
+		if (this.rangeBar) {
+		    rangeLeft = (this.handles.length > 1) ? this.handles[0].attr('title') : 0;
+		    this.rangeBar.css({
+		        'margin-left': rangeLeft + "%",
+	            'width': (percent-rangeLeft) + "%"
+            });
+		}
 
 		// add/remove classes for flip toggle switch
-		if ( cType === "select" ) {
+		if ( cTypeIsSelect ) {
 			if ( newval === 0 ) {
 				this.slider.addClass( "ui-slider-switch-a" )
 					.removeClass( "ui-slider-switch-b" );
@@ -287,9 +345,9 @@ $.widget( "mobile.slider", $.mobile.widget, {
 			var valueChanged = false;
 
 			// update control"s value
-			if ( cType === "input" ) {
-				valueChanged = control.val() !== newval;
-				control.val( newval );
+			if ( !cTypeIsSelect ) {
+			    valueChanged = control.val() !== newval;
+			    actHandle.data('handle') === 'single' ? control.val(newval) : control.data(actHandle.data('handle'), newval);
 			} else {
 				valueChanged = control[ 0 ].selectedIndex !== newval;
 				control[ 0 ].selectedIndex = newval;

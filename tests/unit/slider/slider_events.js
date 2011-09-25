@@ -6,13 +6,14 @@
 	var onChangeCnt = 0;
 	window.onChangeCounter = function() {
 		onChangeCnt++;
-	}
+	};
+
 	module('jquery.mobile.slider.js');
 
 	var keypressTest = function(opts){
 		var slider = $(opts.selector),
 		    val = window.parseFloat(slider.val()),
-				handle = slider.siblings('.ui-slider').find('.ui-slider-handle');
+			handle = slider.siblings('.ui-slider').find('.ui-slider-handle').eq(0);
 
 		expect( opts.keyCodes.length );
 
@@ -23,7 +24,9 @@
 			handle.trigger('keydown');
 
 			val += opts.increment;
-			same(val, window.parseFloat(slider.val(), 10), "new value is " + opts.increment + " different");
+			if (opts.assert !== false) {
+			    same(val, window.parseFloat(slider.val(), 10), "new value is " + opts.increment + " different");
+			}
 		});
 	};
 
@@ -99,7 +102,59 @@
 		slider.keyup();
 		same(slider.val(), "200");
 	});
-	
+
+   test( "set the value via refresh", function(){
+        var slider = $("#range-slider-up");
+        slider.slider("refresh", 50);
+        same(slider.val(), "50");
+    });
+
+   test( "two handle slider should not modified the value attribute", function(){
+       var slider = $("#two-handles"),
+           orig = slider.val(),
+           values = slider.slider("values"),
+           increment = 10;
+
+       keypressTest({
+           selector: "#two-handles",
+           keyCodes: ['RIGHT'],
+           increment: increment,
+           assert: false
+       });
+
+       expect(3);
+       same(slider.val(), orig);
+
+       var newValues = slider.slider("values");
+       same(values[0] + increment, newValues[0]);
+       same(values[1], newValues[1]);
+   });
+
+   test( "value-setter for two-handle-slider", function(){
+       var slider = $("#two-handles"),
+           handles = slider.siblings('.ui-slider').find('a'),
+           values = [27, 87];
+
+       expect(values.length * 2);
+       slider.slider("refresh", values);
+       handles.each(function(i, handle) {
+           handle = jQuery(handle);
+           same(handle.attr('aria-valuenow'), values[i].toString(), "handle value is " + values[i]);
+           same(handle.css('left'), values[i].toString() + "%", "handle style is left:" + values[i] + "%");
+       });
+   });
+
+   test( "slider with range-background theme should have a inner range-div with corresponding theme and width", function(){
+       var slider = $("#range-background"),
+           backgroundDiv = slider.next().find('.ui-slider-range-background');
+
+       expect(4);
+       same(slider.val(), "25");
+       same((parseInt(100 * parseFloat(backgroundDiv.css('width')) / parseFloat(backgroundDiv.parent().css('width')) ) + '%'), '25%');
+       same(backgroundDiv.css('margin-left'), '0%', "Margin-left should be 0, as there is only one handle");
+       ok(backgroundDiv.hasClass('ui-btn-down-c'), "Background-Track has swatch c");
+   });
+
 	test( "input type should degrade to number when slider is created", function(){
 		same($("#range-slider-up").attr( "type" ), "number");
 	});
@@ -107,7 +162,7 @@
 	// generic switch test function
 	var sliderSwitchTest = function(opts){
 		var slider = $("#slider-switch"),
-			  handle = slider.siblings('.ui-slider').find('a'),
+			handle = slider.siblings('.ui-slider').find('a'),
 		    switchValues = {
 					'off' : 0,
 					'on' : 1
