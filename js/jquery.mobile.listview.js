@@ -14,12 +14,12 @@ var listCountPerPage = {};
 
 $.widget( "mobile.listview", $.mobile.widget, {
 	options: {
-		theme: "c",
-		countTheme: "c",
-		headerTheme: "b",
-		dividerTheme: "b",
+		theme: {toString: (function() { return $.mobile.getTheme("c"); })},
+		countTheme: {toString: (function() { return $.mobile.getTheme("c"); })},
+		headerTheme: {toString: (function() { return $.mobile.getTheme("b"); })},
+		dividerTheme: {toString: (function() { return $.mobile.getTheme("b"); })},
 		splitIcon: "arrow-r",
-		splitTheme: "b",
+		splitTheme: {toString: (function() { return $.mobile.getTheme("b"); })},
 		inset: false,
 		initSelector: ":jqmData(role='listview')"
 	},

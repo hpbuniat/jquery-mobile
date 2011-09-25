@@ -9,7 +9,7 @@
 $.widget( "mobile.dialog", $.mobile.widget, {
 	options: {
 		closeBtnText 	: "Close",
-		theme			: "a",
+		theme			: {toString: (function() { return $.mobile.getTheme("a"); })},
 		initSelector	: ":jqmData(role='dialog')"
 	},
 	_create: function() {
