@@ -134,7 +134,7 @@
 				var relObj = path.parseUrl( relUrl ),
 					absObj = path.parseUrl( absUrl ),
 					protocol = relObj.protocol || absObj.protocol,
-					doubleSlash = relObj.protocol ? relObj.doubleSlash : ( relObj.doubleSlash || absObj.doubleSlash );
+					doubleSlash = relObj.protocol ? relObj.doubleSlash : ( relObj.doubleSlash || absObj.doubleSlash ),
 					authority = relObj.authority || absObj.authority,
 					hasPath = relObj.pathname !== "",
 					pathname = path.makePathAbsolute( relObj.pathname || absObj.filename, absObj.pathname ),
@@ -662,7 +662,14 @@
 				&& page.is(":jqmData(external-page='true')") ) {
 
 			page.bind( 'pagehide.remove', function() {
-				$( this ).removeWithDependents();
+				var $this = $( this ),
+					prEvent = new $.Event( "pageremove" );
+
+				$this.trigger( prEvent );
+
+				if( !prEvent.isDefaultPrevented() ){
+					$this.removeWithDependents();
+				}
 			});
 		}
 	};
@@ -730,14 +737,14 @@
 		// reference to an embedded page. If so, it may have been dynamically
 		// injected by a developer, in which case it would be lacking a data-url
 		// attribute and in need of enhancement.
-		if ( page.length === 0 && !path.isPath( dataUrl ) ) {
+		if ( page.length === 0 && dataUrl && !path.isPath( dataUrl ) ) {
 			page = settings.pageContainer.children( "#" + dataUrl )
 				.attr( "data-" + $.mobile.ns + "url", dataUrl )
 		}
 
 		// If we failed to find a page in the DOM, check the URL to see if it
 		// refers to the first page in the application.
-		if ( page.length === 0 && $.mobile.firstPage && path.isFirstPageUrl( absUrl ) ) {
+		if ( page.length === 0 && $.mobile.firstPage && path.isFirstPageUrl( fileUrl ) ) {
 			page = $( $.mobile.firstPage );
 		}
 
@@ -807,7 +814,7 @@
 						newPageTitle = html.match( /<title[^>]*>([^<]*)/ ) && RegExp.$1,
 
 						// TODO handle dialogs again
-						pageElemRegex = new RegExp( ".*(<[^>]+\\bdata-" + $.mobile.ns + "role=[\"']?page[\"']?[^>]*>).*" ),
+						pageElemRegex = new RegExp( "(<[^>]+\\bdata-" + $.mobile.ns + "role=[\"']?page[\"']?[^>]*>)" ),
 						dataUrlRegex = new RegExp( "\\bdata-" + $.mobile.ns + "url=[\"']?([^\"'>]*)[\"']?" );
 
 
@@ -1023,13 +1030,17 @@
 			pageTitle = document.title,
 			isDialog = settings.role === "dialog" || toPage.jqmData( "role" ) === "dialog";
 
-		// If we are trying to transition to the same page that we are currently on ignore the request.
-		// an illegal same page request is defined by the current page being the same as the url, as long as there's history
-		// and toPage is not an array or object (those are allowed to be "same")
-		//
-		// XXX_jblas: We need to remove this at some point when we allow for transitions
-		//            to the same page.
-		if( fromPage && fromPage[0] === toPage[0] ) {
+		// By default, we prevent changePage requests when the fromPage and toPage
+		// are the same element, but folks that generate content manually/dynamically
+		// and reuse pages want to be able to transition to the same page. To allow
+		// this, they will need to change the default value of allowSamePageTransition
+		// to true, *OR*, pass it in as an option when they manually call changePage().
+		// It should be noted that our default transition animations assume that the
+		// formPage and toPage are different elements, so they may behave unexpectedly.
+		// It is up to the developer that turns on the allowSamePageTransitiona option
+		// to either turn off transition animations, or make sure that an appropriate
+		// animation transition is used.
+		if( fromPage && fromPage[0] === toPage[0] && !settings.allowSamePageTransition ) {
 			isPageTransitioning = false;
 			mpc.trigger( "pagechange", triggerData );
 			return;
@@ -1079,7 +1090,7 @@
 		}
 
 		//if title element wasn't found, try the page div data attr too
-		var newPageTitle = toPage.jqmData( "title" ) || toPage.children(":jqmData(role='header')").find(".ui-title" ).text();
+		var newPageTitle = toPage.jqmData( "title" ) || toPage.children(":jqmData(role='header')").find(".ui-title" ).getEncodedText();
 		if( !!newPageTitle && pageTitle == document.title ) {
 			pageTitle = newPageTitle;
 		}
@@ -1132,7 +1143,8 @@
 		pageContainer: undefined,
 		showLoadMsg: true, //loading message shows by default when pages are being fetched during changePage
 		dataUrl: undefined,
-		fromPage: undefined
+		fromPage: undefined,
+		allowSamePageTransition: false
 	};
 
 /* Event Bindings - hashchange, submit, and click */

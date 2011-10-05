@@ -96,6 +96,56 @@
 		]);
 	});
 
+	asyncTest( "preventDefault on pageremove event can prevent external page from being removed from the DOM", function(){
+		var preventRemoval = true,
+			removeCallback = function( e ) {
+				if ( preventRemoval ) {
+					e.preventDefault();
+				}
+			};
+
+		$( document ).bind( "pageremove", removeCallback );
+
+		$.testHelper.pageSequence([
+			navigateTestRoot,
+
+			function(){
+				$.mobile.changePage( "external.html" );
+			},
+
+			// page is pulled and displayed in the dom
+			function(){
+				same( $( "#external-test" ).length, 1 );
+				window.history.back();
+			},
+
+			// external-test *IS* cached in the dom after transitioning away
+			function(){
+				same( $( "#external-test" ).length, 1 );
+
+				// Switch back to the page again!
+				$.mobile.changePage( "external.html" );
+			},
+
+			// page is still present and displayed in the dom
+			function(){
+				same( $( "#external-test" ).length, 1 );
+
+				// Now turn off our removal prevention.
+				preventRemoval = false;
+
+				window.history.back();
+			},
+
+			// external-test is *NOT* cached in the dom after transitioning away
+			function(){
+				same( $( "#external-test" ).length, 0 );
+				$( document ).unbind( "pageremove", removeCallback );
+				start();
+			}
+		]);
+	});
+
 	asyncTest( "external page is cached in the DOM after pagehide", function(){
 		$.testHelper.pageSequence([
 			navigateTestRoot,
@@ -874,6 +924,35 @@
 			function(){
 				// Make sure we actually navigated to the expected page.
 				ok( $.mobile.activePage[ 0 ] == $( "#injected-test-page" )[ 0 ], "navigated successfully to #injected-test-page" );
+
+				start();
+			}
+		]);
+	});
+
+
+	asyncTest( "application url with dialogHashKey loads application's first page", function(){
+		$.testHelper.pageSequence([
+			// open our test page
+			function(){
+				// Navigate to any page except the first page of the application.
+				$.testHelper.openPage("#foo");
+			},
+
+			function(){
+				ok( $.mobile.activePage[ 0 ] === $( "#foo" )[ 0 ], "navigated successfully to #foo" );
+
+				// Now navigate to an hash that contains just a dialogHashKey.
+				$.mobile.changePage("#" + $.mobile.dialogHashKey);
+			},
+
+			function(){
+				// Make sure we actually navigated to the first page.
+				ok( $.mobile.activePage[ 0 ] === $.mobile.firstPage[ 0 ], "navigated successfully to first-page" );
+
+				// Now make sure opening the page didn't result in page duplication.
+				ok( $.mobile.firstPage.hasClass( "first-page" ), "first page has expected class" );
+				same( $( ".first-page" ).length, 1, "first page was not duplicated" );
 
 				start();
 			}

@@ -53,6 +53,9 @@
 
 		pushStateEnabled: true,
 
+		// turn of binding to the native orientationchange due to android orientation behavior
+		orientationChangeEnabled: true,
+
 		// Support conditions that must be met in order to proceed
 		// default enhanced qualifications are media query support OR IE 7+
 		gradeA: function(){
@@ -184,6 +187,13 @@
 		var dependents = $(elem).jqmData( 'dependents' ) || $();
 
 		$(elem).jqmData( 'dependents', $.merge(dependents, newDependents) );
+	};
+
+	// note that this helper doesn't attempt to handle the callback
+	// or setting of an html elements text, its only purpose is
+	// to return the html encoded version of the text in all cases. (thus the name)
+	$.fn.getEncodedText = function() {
+		return $( "<div/>" ).text( $(this).text() ).html();
 	};
 
 	// Monkey-patching Sizzle to filter the :jqmData selector

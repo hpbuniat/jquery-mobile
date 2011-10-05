@@ -116,7 +116,7 @@ $.widget( "mobile.slider", $.mobile.widget, {
 				$( "<div class='ui-slider-labelbg ui-slider-labelbg-" + side + theme + " ui-btn-corner-" + corners + "'></div>" )
 					.prependTo( slider );
 
-				$( "<span class='ui-slider-label ui-slider-label-" + side + theme + " ui-btn-corner-" + corners + "' role='img'>" + $( this ).text() + "</span>" )
+				$( "<span class='ui-slider-label ui-slider-label-" + side + theme + " ui-btn-corner-" + corners + "' role='img'>" + $( this ).getEncodedText() + "</span>" )
 					.prependTo( handles[0] );
 			});
 
@@ -329,6 +329,12 @@ $.widget( "mobile.slider", $.mobile.widget, {
 	            'width': (percent-rangeLeft) + "%"
             });
 		}
+		this.handle.css( "left", percent + "%" );
+		this.handle.attr( {
+				"aria-valuenow": cType === "input" ? newval : control.find( "option" ).eq( newval ).attr( "value" ),
+				"aria-valuetext": cType === "input" ? newval : control.find( "option" ).eq( newval ).getEncodedText(),
+				title: newval
+			});
 
 		// add/remove classes for flip toggle switch
 		if ( cTypeIsSelect ) {

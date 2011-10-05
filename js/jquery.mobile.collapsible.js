@@ -45,7 +45,7 @@ $.widget( "mobile.collapsible", $.mobile.widget, {
 			}
 		}
 
-		collapsibleContent.addClass( ( o.contentTheme ) ? ( "ui-btn-up-" + o.contentTheme ) : "");
+		collapsibleContent.addClass( ( o.contentTheme ) ? ( "ui-body-" + o.contentTheme ) : "");
 
 		collapsibleHeading
 			//drop heading in before content
@@ -61,7 +61,7 @@ $.widget( "mobile.collapsible", $.mobile.widget, {
 					iconPos: "left",
 					icon: "plus",
 					theme: o.theme
-				})
+				});
 
 		if ( !collapsibleSet.length ) {
 			collapsibleHeading
@@ -120,7 +120,7 @@ $.widget( "mobile.collapsible", $.mobile.widget, {
 					collapsibleHeading
 						.toggleClass( "ui-collapsible-heading-collapsed", isCollapse)
 						.find( ".ui-collapsible-heading-status" )
-							.text( o.expandCueText )
+							.text( isCollapse ? o.expandCueText : o.collapseCueText )
 						.end()
 						.find( ".ui-icon" )
 							.toggleClass( "ui-icon-minus", !isCollapse )
@@ -140,7 +140,7 @@ $.widget( "mobile.collapsible", $.mobile.widget, {
 			.trigger( o.collapsed ? "collapse" : "expand" );
 
 		collapsibleHeading
-			.bind( "vclick", function( event ) {
+			.bind( "click", function( event ) {
 
 				var type = collapsibleHeading.is( ".ui-collapsible-heading-collapsed" ) ?
 										"expand" : "collapse";
